@@ -1,0 +1,277 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import (
+    accuracy_score, confusion_matrix,
+    classification_report, roc_curve, auc
+)
+
+#LOAD THE DATASET
+
+# loading the dataset to a Pandas DataFrame
+credit_card_data = pd.read_csv('/content/creditcard.csv')
+
+print("✅ Dataset Loaded Successfully!")
+print("Shape of dataset:", credit_card_data.shape)
+
+credit_card_data.info()
+
+# first 5 rows of the dataset
+credit_card_data.head()
+
+credit_card_data.tail() #last 5 rows of the data frame
+
+# dataset informations
+credit_card_data.info()
+
+# checking the number of missing values in each column
+credit_card_data.isnull().sum().sum()
+
+# distribution of legit transactions & fraudulent transactions
+credit_card_data['Class'].value_counts()
+
+"""This Dataset is highly unblanced
+
+0 --> Normal Transaction
+
+1 --> fraudulent transaction
+"""
+
+# separating the data for analysis
+legit = credit_card_data[credit_card_data.Class == 0]
+fraud = credit_card_data[credit_card_data.Class == 1]
+
+# Display the fraud data
+display(fraud.head())
+
+print(legit.shape)
+print(fraud.shape)
+
+# statistical measures of the data
+legit.Amount.describe()
+
+fraud.Amount.describe()
+
+# compare the values for both transactions
+credit_card_data.groupby('Class').mean()
+
+"""Under-Sampling
+
+Build a sample dataset containing similar distribution of normal transactions and Fraudulent Transactions
+
+Number of Fraudulent Transactions --> 492
+"""
+
+legit_sample = legit.sample(n=492)
+
+"""Concatenating two DataFrames"""
+
+new_dataset = pd.concat([legit_sample, fraud], axis=0)
+
+new_dataset.head()
+
+new_dataset.tail()
+
+new_dataset['Class'].value_counts() #uniformly distributed data
+
+new_dataset.groupby('Class').mean()
+
+"""Splitting the data into Features & Targets"""
+
+X = new_dataset.drop(columns='Class', axis=1)
+Y = new_dataset['Class']
+
+print(X)
+
+print(Y)
+
+"""Split the data into Training data & Testing Data"""
+
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, stratify=Y, random_state=2)
+
+print(X.shape, X_train.shape, X_test.shape)
+
+"""Model Training
+
+Model Evaluation
+
+Accuracy Score
+"""
+
+# accuracy on training data
+X_train_prediction = model.predict(X_train)
+training_data_accuracy = accuracy_score(X_train_prediction, Y_train)
+
+print('Accuracy on Training data : ', training_data_accuracy)
+
+# ----------------------------------------------------------
+# STEP 3: BASIC DATA VISUALIZATIONS
+# ----------------------------------------------------------
+
+# Class Distribution
+plt.figure(figsize=(5,4))
+sns.countplot(x='Class', data=credit_card_data, palette='coolwarm')
+plt.title("Class Distribution (0 = Legit, 1 = Fraud)")
+plt.show()
+
+# Transaction Amount Distribution
+legit = credit_card_data[credit_card_data.Class == 0]
+fraud = credit_card_data[credit_card_data.Class == 1]
+
+plt.figure(figsize=(6,4))
+sns.histplot(legit['Amount'], bins=30, label='Legit', color='green', kde=True)
+sns.histplot(fraud['Amount'], bins=30, label='Fraud', color='red', kde=True)
+plt.legend()
+plt.title("Distribution of Transaction Amounts")
+plt.show()
+
+# ----------------------------------------------------------
+# STEP 4: DATA BALANCING (UNDER-SAMPLING)
+# ----------------------------------------------------------
+
+legit_sample = legit.sample(n=len(fraud))
+new_dataset = pd.concat([legit_sample, fraud], axis=0)
+
+print("\nBalanced Dataset Class Distribution:\n", new_dataset['Class'].value_counts())
+
+plt.figure(figsize=(5,4))
+sns.countplot(x='Class', data=new_dataset, palette='viridis')
+plt.title("Balanced Class Distribution After Under-Sampling")
+plt.show()
+
+# ----------------------------------------------------------
+# STEP 5: CORRELATION HEATMAP
+# ----------------------------------------------------------
+
+plt.figure(figsize=(10,8))
+sns.heatmap(new_dataset.corr(), cmap='coolwarm', annot=False)
+plt.title("Correlation Heatmap of Features")
+plt.show()
+
+# ----------------------------------------------------------
+# STEP 6: SPLIT DATA INTO FEATURES AND TARGET
+# ----------------------------------------------------------
+
+X = new_dataset.drop(columns='Class', axis=1)
+Y = new_dataset['Class']
+
+X_train, X_test, Y_train, Y_test = train_test_split(
+    X, Y, test_size=0.2, stratify=Y, random_state=2
+)
+
+# ----------------------------------------------------------
+# STEP 7: LOGISTIC REGRESSION MODEL
+# ----------------------------------------------------------
+
+log_model = LogisticRegression(max_iter=1000)
+log_model.fit(X_train, Y_train)
+
+log_train_pred = log_model.predict(X_train)
+log_test_pred = log_model.predict(X_test)
+
+log_train_acc = accuracy_score(log_train_pred, Y_train)
+log_test_acc = accuracy_score(log_test_pred, Y_test)
+
+print("\n🔹 Logistic Regression Results:")
+print("Training Accuracy:", log_train_acc)
+print("Testing Accuracy :", log_test_acc)
+print("\nClassification Report (Logistic Regression):\n", classification_report(Y_test, log_test_pred))
+
+# ----------------------------------------------------------
+# STEP 8: RANDOM FOREST MODEL
+# ----------------------------------------------------------
+
+rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_model.fit(X_train, Y_train)
+
+rf_train_pred = rf_model.predict(X_train)
+rf_test_pred = rf_model.predict(X_test)
+
+rf_train_acc = accuracy_score(rf_train_pred, Y_train)
+rf_test_acc = accuracy_score(rf_test_pred, Y_test)
+
+print("\n🌲 Random Forest Results:")
+print("Training Accuracy:", rf_train_acc)
+print("Testing Accuracy :", rf_test_acc)
+print("\nClassification Report (Random Forest):\n", classification_report(Y_test, rf_test_pred))
+
+# ----------------------------------------------------------
+# STEP 9: CONFUSION MATRICES
+# ----------------------------------------------------------
+
+fig, ax = plt.subplots(1, 2, figsize=(10,4))
+
+sns.heatmap(confusion_matrix(Y_test, log_test_pred), annot=True, fmt='d', cmap='Greens', ax=ax[0])
+ax[0].set_title("Logistic Regression Confusion Matrix")
+
+sns.heatmap(confusion_matrix(Y_test, rf_test_pred), annot=True, fmt='d', cmap='Blues', ax=ax[1])
+ax[1].set_title("Random Forest Confusion Matrix")
+
+plt.show()
+
+# ----------------------------------------------------------
+# STEP 10: FEATURE IMPORTANCE (RANDOM FOREST)
+# ----------------------------------------------------------
+
+importances = pd.Series(rf_model.feature_importances_, index=X.columns)
+top_features = importances.sort_values(ascending=False)[:10]
+
+plt.figure(figsize=(7,5))
+sns.barplot(x=top_features, y=top_features.index, palette='mako')
+plt.title("Top 10 Important Features (Random Forest)")
+plt.xlabel("Importance Score")
+plt.ylabel("Feature")
+plt.show()
+
+# ----------------------------------------------------------
+# STEP 11: MODEL ACCURACY COMPARISON BAR CHART
+# ----------------------------------------------------------
+
+models = ['Logistic Regression', 'Random Forest']
+train_acc = [log_train_acc, rf_train_acc]
+test_acc = [log_test_acc, rf_test_acc]
+
+x = np.arange(len(models))
+width = 0.35
+
+plt.figure(figsize=(6,4))
+plt.bar(x - width/2, train_acc, width, label='Training Accuracy')
+plt.bar(x + width/2, test_acc, width, label='Testing Accuracy')
+plt.xticks(x, models)
+plt.ylabel('Accuracy')
+plt.title('Model Accuracy Comparison')
+plt.legend()
+plt.show()
+
+# ----------------------------------------------------------
+# STEP 12: ROC CURVE COMPARISON
+# ----------------------------------------------------------
+
+log_probs = log_model.predict_proba(X_test)[:, 1]
+rf_probs = rf_model.predict_proba(X_test)[:, 1]
+
+fpr_log, tpr_log, _ = roc_curve(Y_test, log_probs)
+fpr_rf, tpr_rf, _ = roc_curve(Y_test, rf_probs)
+
+plt.figure(figsize=(6,5))
+plt.plot(fpr_log, tpr_log, label=f"Logistic Regression (AUC = {auc(fpr_log, tpr_log):.3f})")
+plt.plot(fpr_rf, tpr_rf, label=f"Random Forest (AUC = {auc(fpr_rf, tpr_rf):.3f})")
+plt.plot([0,1], [0,1], 'k--')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve Comparison')
+plt.legend()
+plt.show()
+
+# ----------------------------------------------------------
+# STEP 13: MODEL SUMMARY
+# ----------------------------------------------------------
+
+print("\n✅ MODEL COMPARISON SUMMARY:")
+print(f"Logistic Regression → Train: {log_train_acc:.4f}, Test: {log_test_acc:.4f}")
+print(f"Random Forest       → Train: {rf_train_acc:.4f}, Test: {rf_test_acc:.4f}")
+
