@@ -60,3 +60,27 @@ The application handles the complete end-to-end data lifecycle:
    ```bash
    git clone [https://github.com/RithishPK/Fraud_Detection_in_Financial_services.git](https://github.com/RithishPK/Fraud_Detection_in_Financial_services.git)
    cd Fraud_Detection_in_Financial_services/Streamlit
+
+Install system dependencies:
+
+Bash
+pip install streamlit pandas numpy matplotlib seaborn scikit-learn
+Incorporate Data Assets:
+
+Download your source dataset (e.g., the standard Kaggle creditcard.csv log bundle).
+
+Place the creditcard.csv file directly inside your local Streamlit/ subfolder.
+(Note: The embedded .gitignore setting keeps this massive file safely hidden from your public git tracking histories).
+
+Launch the Engine:
+
+Bash
+streamlit run app.py
+📈 Sample Inference Preview
+When testing raw transactional parameters inside the sandbox, the model outputs dynamic indicators:
+
+🔴 High Risk Flagged: Triggered instantly if calculation confidence vectors break past 50% threat capacity thresholds.
+
+🟢 Approved State: Verified if structural parameter variances stay within standard historical metrics.
+
+Developed by RithishPK • Connect for reviews or expansion inquiries.
